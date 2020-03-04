@@ -3,9 +3,9 @@
 const fs = require("fs-extra");
 const path = require("path");
 const semver = require("semver");
-const inquirer = require("inquirer");
 const polyfillLibrary = require("../../lib/index");
 const TOML = require("@iarna/toml");
+
 async function main() {
 	const file = path.join(__dirname, "./compat.json");
 	// Ensure file exists before proceeding.
@@ -25,67 +25,18 @@ async function main() {
 			for (const [version, support] of Object.entries(compat[feature][browser])) {
 				if (support === "native") {
 					if (featureMetadata.browsers && featureMetadata.browsers[browser] && semver.satisfies(semver.coerce(version), featureMetadata.browsers[browser])) {
-						const currentRange = featureMetadata.browsers[browser];
-						questions.push({
-							type: "input",
-							name: feature + "|" + browser,
-							message: `${browser}/${version} supports ${feature} natively. Please update the configuration for ${feature} to no longer target ${browser}/${version}. Current range is ${currentRange}.`,
-							default: function() {
-								return JSON.stringify({ [browser]: `<${version}` });
-							},
-							validate: function(value) {
-								const obj = JSON.parse(value);
-								const valid = semver.validRange(Object.values(obj)[0]);
-								if (valid) {
-									return true;
-								}
-
-								return "Please enter a valid semver range";
-							}
-						});
+						questions.push([feature + "|" + browser, JSON.stringify({ [browser]: `<${version}` })]);
 					}
 				}
 				if (support === "polyfilled") {
 					if (!featureMetadata.browsers || !featureMetadata.browsers[browser] || !semver.satisfies(semver.coerce(version), featureMetadata.browsers[browser])) {
-						questions.push({
-							type: "input",
-							name: feature + "|" + browser,
-							message: `${browser}/${version} requires a polyfill for ${feature}. Please update the configuration for ${feature} to target ${browser}/${version}.`,
-							default: function() {
-								return JSON.stringify({ [browser]: `<${Number.parseFloat(version) + 1}` });
-							},
-							validate: function(value) {
-								const obj = JSON.parse(value);
-								const valid = semver.validRange(Object.values(obj)[0]);
-								if (valid) {
-									return true;
-								}
-
-								return "Please enter a valid semver range";
-							}
-						});
+						questions.push([feature + "|" + browser, JSON.stringify({ [browser]: `<${Number.parseFloat(version) + 1}` })]);
 					}
 				}
 
 				if (support === "missing") {
 					if (!featureMetadata.browsers || !featureMetadata.browsers[browser] || !semver.satisfies(semver.coerce(version), featureMetadata.browsers[browser])) {
-						questions.push({
-							type: "input",
-							name: feature + "|" + browser,
-							message: `${browser}/${version} requires a polyfill for ${feature}. Please update the configuration for ${feature} to target ${browser}/${version}.`,
-							default: function() {
-								return JSON.stringify({ [browser]: `<${Number.parseFloat(version) + 1}` });
-							},
-							validate: function(value) {
-								const obj = JSON.parse(value);
-								const valid = semver.validRange(Object.values(obj)[0]);
-								if (valid) {
-									return true;
-								}
-
-								return "Please enter a valid semver range";
-							}
-						});
+						questions.push([feature + "|" + browser,JSON.stringify({ [browser]: `<${Number.parseFloat(version) + 1}` })]);
 					}
 				}
 			}
@@ -93,20 +44,15 @@ async function main() {
 	}
 
 	async function updateFeature(feature, update) {
-		let configPath = path.join(__dirname, "../../polyfills", feature.join("/"), "config.toml");
-		const fileExists = fs.existsSync(configPath);
-		if (!fileExists) {
-			configPath = path.join(__dirname, "../../polyfills", feature.join("."), "config.toml");
-		}
+		const configPath = path.join(__dirname, "../../polyfills", feature.join("/").replace('.', '/'), "config.toml");
 		const config = TOML.parse(await fs.readFile(configPath, 'utf-8'));
 		config.browsers = config.browsers || {};
 		config.browsers = Object.assign(config.browsers, JSON.parse(update));
-        // await fs.outputJSON(configPath, config, { spaces: 2 });
         await fs.writeFile(configPath, TOML.stringify(config), 'utf-8');
 	}
 	if (questions.length > 0) {
-		const answers = await inquirer.prompt(questions);
-		for (const [featureWithBrowser, value] of Object.entries(answers)) {
+		const answers = questions;
+		for (const [featureWithBrowser, value] of answers) {
 			const [feature] = featureWithBrowser.split("|");
 			if (typeof value === "object") {
 				for (const [featureWithBrowser2, value2] of Object.entries(value)) {
