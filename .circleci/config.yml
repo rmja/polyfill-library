@@ -113,7 +113,8 @@ jobs:
       - run: node ./test/polyfills/remotetest.js control
       - run: node ./test/polyfills/remotetest.js all
       - run: node ./test/polyfills/compat.js
-      - run: node ./test/polyfills/update-polyfill-targeting.js 
+      - run: node ./test/polyfills/update-polyfill-targeting.js
+      - run: git diff --quiet || for i in `git diff --name-only`; do git checkout master && git checkout -b `echo $i | sed 's/polyfills\///' | sed 's/\/config\.toml//'` && git add $i && git commit -m "update targets for $i" && git push origin; done
 workflows:
   update_polyfill_targets:
     jobs:
