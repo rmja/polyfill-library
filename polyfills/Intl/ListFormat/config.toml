@@ -1,10 +1,10 @@
-dependencies = [ "Intl", "Intl.~locale.en", "Intl.PluralRules" ]
+dependencies = [ "Intl", "Intl.~locale.en"]
 license = "MIT"
 spec = "https://tc39.es/proposal-intl-relative-time/#sec-intl-listformat-constructor"
 repo = "https://github.com/formatjs/formatjs/tree/master/packages/intl-listformat/polyfill.js"
 docs = "https://developer.mozilla.org/de/docs/Web/JavaScript/Reference/Global_Objects/listformat"
 notes = [
-  "Locales must be specified separately by prefixing the locale name with `Intl.listformat~locale`, eg `Intl.listformat~locale.en-GB`."
+  "Locales must be specified separately by prefixing the locale name with `Intl.ListFormat~locale`, eg `Intl.ListFormat~locale.en-GB`."
 ]
 
 [browsers]
